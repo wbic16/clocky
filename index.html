@@ -1,0 +1,170 @@
+<html>
+    <head>
+        <title>clocky</title>
+<style type="text/css">
+body {
+    background-color: black;
+    color: white;
+    font-family: monospace;
+    font-size: 2em;
+}
+#clicker {
+    width: 40%;
+    height: 40%;
+    border: 10px solid lightblue;
+    border-radius: 100px;
+    background-color: #4848fe;
+    color: white;
+    font-family: monospace;
+    text-align: center;
+    position: relative;
+    user-select: none;
+}
+#footer {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+}
+#timelog {
+    position: absolute;
+    right: 30%;
+    top: 10%;
+}
+#runner {
+    position: absolute;
+    top: 1.5%;
+    right: 30%;
+}
+#clearButton {
+    position: absolute;
+    right: 30%;
+    top: 5%;
+    font-size: 1em;
+    border: 3px solid grey;
+    border-radius: 10px;
+    background-color: lightskyblue;
+}
+#clicker:hover {
+    cursor: pointer;
+}
+#clicker .label {
+    position: absolute;
+    top: 40%;
+    width: 100%;
+    font-size: 4em;
+    font-weight: bold;    
+}
+.in {
+    background-color: lightgreen;
+    color: black;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+.out {
+    background-color: lightblue;
+    color: black;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+</style>
+    </head>
+    <body onload="restore();">
+        <div id="clicker" onclick="clicker();"><div id="clicker_label" class="label">Clock In</div></div>
+        <div id="timelog"></div>
+        <input id="clearButton" type="button" onclick="clear_timelog();" value="Clear" />
+        <div id="runner"></div>
+        <div id="footer">(c) 2024 Phext.in.pheffer</div>
+        <script type="text/javascript">
+function dgid(id) {
+    return document.getElementById(id);
+}
+function set_clicker(cl, state) {
+    cl.innerHTML = state ? "Clock Out" : "Clock In";
+    var log = localStorage.timelog;
+    if (log) {
+        var tl = dgid("timelog");
+        if (tl) {
+            tl.innerHTML = log;
+        }
+    }
+}
+var timer_active = localStorage.timer_active;
+var time_runner = false;
+var start_time = false;
+function clear_timelog() {
+    var tl = dgid("timelog");
+    if (tl) {
+        tl.innerHTML = "";
+        localStorage.time_history = "";
+    }
+}
+function runner() {
+    if (timer_active) {
+        const parsed_start = new Date(parseInt(start_time));
+        const current_timestamp = Date.now();
+        const parsed_end = new Date(parseInt(current_timestamp));
+        const display_start = parsed_start.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        const display_end = parsed_end.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        const duration = Math.round((current_timestamp - start_time)/1000);
+        const seconds = duration % 60;
+        const temp = (duration - seconds) / 60;
+        const minutes = temp % 60;
+        const hours = (temp - minutes) / 60;
+        const duration_display = hours + " h &nbsp;" + minutes + " min";
+        time_runner.innerHTML = "<span class='in'>In: " + display_start + "</span><span class='out'>Out: " + display_end + "</span> = " + duration_display;
+        setTimeout(runner, 1000);
+    }
+}
+function clicker() {
+    var cl = dgid('clicker_label');
+    if (cl) {
+        var state = cl.innerHTML == "Clock In";
+        set_clicker(cl, state);
+        localStorage.clocked = state;
+        if (state == false) {
+            append_timelog();
+            timer_active = false;
+        } else {
+            time_runner = dgid('runner');
+            timer_active = true;            
+            start_time = Date.now();
+            localStorage.last_start_time = start_time;
+            setTimeout(runner, 100);
+        }
+    }
+
+    localStorage.timer_active = timer_active;
+}
+function append_timelog() {
+    var stream = localStorage.time_history;
+    if (stream) {
+        stream += "<br />" + time_runner.innerHTML;        
+    } else {
+        stream = time_runner.innerHTML;
+    }
+    localStorage.time_history = stream;
+    load_time_history(stream);
+}
+function load_time_history(stream) {
+    if (stream) {
+        var tl = dgid("timelog");
+        if (tl) {
+            tl.innerHTML = stream;
+        }
+    }
+}
+function restore() {
+    var state = localStorage.clocked == 'true';
+    var cl = dgid('clicker_label');
+    time_runner = dgid('runner');
+    start_time = localStorage.last_start_time;
+    var stream = localStorage.time_history;
+    load_time_history(stream);
+    if (cl && state) {
+        set_clicker(cl, state);
+        runner();
+    }
+}
+        </script>
+    </body>
+</html>
